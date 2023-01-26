@@ -6,16 +6,27 @@ const ctx = canvas.getContext("2d");
 
 //Bools för att se ifall knappen är nertryckt
 let UP;
+let friction = 0.1;
 
 //Array med alla bollar
 let ballList = [];
 
 class Ball {
   constructor(x, y, r, color) {
+    //Posistion i x och y
     this.x = x;
     this.y = y;
+    //Radien
     this.r = r;
     this.color = color;
+    //Horizontel och vertikal velocity
+    this.vel_x = 0;
+    this.vel_y = 0;
+    //acceleration vertikalt och horizontelt
+    this.acc_x = 0;
+    this.acc_y = 0;
+    this.acceleration = 1;
+    //Lägger in den i boll arrayen
     ballList.push(this);
   }
 
@@ -31,6 +42,23 @@ class Ball {
     ctx.stroke();
     //fyller den
     ctx.fill();
+  }
+
+  // för att rita ut linjer för acceleration och velocity
+  displayLine() {
+    //Linje för acceleration
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(this.x + this.acc_x * 50, this.y + this.acc_y * 50);
+    ctx.strokeStyle = "red";
+    ctx.stroke();
+
+    //Linje för velocity
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(this.x + this.vel_x * 10, this.y + this.vel_y * 10);
+    ctx.strokeStyle = "blue";
+    ctx.stroke();
   }
 }
 
@@ -54,8 +82,15 @@ canvas.addEventListener("keyup", function (e) {
 //Funktion för rörelse
 function move() {
   if (UP) {
-    mainBall.y--;
+    mainBall.acc_y = -mainBall.acceleration;
   }
+  if (!UP) {
+    mainBall.acc_y = 0;
+  }
+  //Velocity påvärkas av accerleration
+  mainBall.vel_y += mainBall.acc_y;
+  mainBall.vel_y *= 1 - friction;
+  mainBall.y += mainBall.vel_y;
 }
 
 //Animerar canvas varje frame
@@ -66,6 +101,7 @@ function mainLoop() {
   move();
   ballList.forEach((b) => {
     b.drawBall();
+    b.displayLine();
   });
 }
 
