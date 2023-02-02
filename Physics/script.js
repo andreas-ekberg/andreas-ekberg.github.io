@@ -7,24 +7,79 @@ const ctx = canvas.getContext("2d");
 //Bools för att se ifall knappen är nertryckt
 let UP;
 let friction = 0.1;
+let elasticity = 1;
+
+let radius = 12;
 
 //Array med alla bollar
-let ballList = [];
+const ballList = [];
 
-class Ball {
-  constructor(x, y, r, color) {
-    //Posistion i x och y
+const wallList = [];
+
+//Vector klass för att kunna räkna ut vektor operationer.
+class Vector {
+  constructor(x, y) {
     this.x = x;
     this.y = y;
+  }
+
+  add(v) {
+    return new Vector(this.x + v.x, this.y + v.y);
+  }
+
+  subtr(v) {
+    return new Vector(this.x - v.x, this.y - v.y);
+  }
+
+  mag() {
+    return Math.sqrt(this.x ** 2 + this.y ** 2);
+  }
+
+  mult(n) {
+    return new Vector(this.x * n, this.y * n);
+  }
+
+  normal() {
+    return new Vector(-this.y, this.x).unit();
+  }
+
+  unit() {
+    if (this.mag() === 0) {
+      return new Vector(0, 0);
+    } else {
+      return new Vector(this.x / this.mag(), this.y / this.mag());
+    }
+  }
+
+  static dot(v1, v2) {
+    return v1.x * v2.x + v1.y * v2.y;
+  }
+
+  drawVec(start_x, start_y, n, color) {
+    ctx.beginPath();
+    ctx.moveTo(start_x, start_y);
+    ctx.lineTo(start_x + this.x * n, start_y + this.y * n);
+    ctx.strokeStyle = color;
+    ctx.stroke();
+  }
+}
+
+class Ball {
+  constructor(x, y, r, m, color) {
+    //Posistion i x och y
+    this.pos = new Vector(x, y);
     //Radien
     this.r = r;
     this.color = color;
+
+    this.m = m;
+    if (this.m === 0) {
+      this.inv_m = 0;
+    } else this.inv_m = 1 / this.m;
     //Horizontel och vertikal velocity
-    this.vel_x = 0;
-    this.vel_y = 0;
+    this.vel = new Vector(0, 0);
     //acceleration vertikalt och horizontelt
-    this.acc_x = 0;
-    this.acc_y = 0;
+    this.acc = new Vector(0, 0);
     this.acceleration = 1;
     //Lägger in den i boll arrayen
     ballList.push(this);
@@ -35,7 +90,7 @@ class Ball {
   drawBall() {
     ctx.beginPath();
     //Ritar en cirkel
-    ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
+    ctx.arc(this.pos.x, this.pos.y, this.r, 0, 2 * Math.PI);
     //Fyller den med färg
     ctx.fillStyle = this.color;
     //Kanten på bollen
@@ -46,19 +101,36 @@ class Ball {
 
   // för att rita ut linjer för acceleration och velocity
   displayLine() {
-    //Linje för acceleration
-    ctx.beginPath();
-    ctx.moveTo(this.x, this.y);
-    ctx.lineTo(this.x + this.acc_x * 50, this.y + this.acc_y * 50);
-    ctx.strokeStyle = "red";
-    ctx.stroke();
+    this.vel.drawVec(this.x, this.y, 10, "blue");
+    this.acc.drawVec(this.x, this.y, 50, "red");
+  }
 
-    //Linje för velocity
+  reposition() {
+    this.acc = this.acc.unit().mult(this.acceleration);
+    //Velocity påvärkas av accerleration
+    this.vel = this.vel.add(this.acc);
+    this.vel = this.vel.mult(1 - friction);
+    this.pos = this.pos.add(this.vel);
+  }
+}
+
+class Wall {
+  constructor(x1, y1, x2, y2) {
+    this.start = new Vector(x1, y1);
+    this.end = new Vector(x2, y2);
+    wallList.push(this);
+  }
+
+  drawWall() {
     ctx.beginPath();
-    ctx.moveTo(this.x, this.y);
-    ctx.lineTo(this.x + this.vel_x * 10, this.y + this.vel_y * 10);
-    ctx.strokeStyle = "blue";
+    ctx.moveTo(this.start.x, this.start.y);
+    ctx.lineTo(this.end.x, this.end.y);
+    ctx.strokeStyle = "black";
     ctx.stroke();
+  }
+
+  wallUnit() {
+    return this.end.subtr(this.start).unit();
   }
 }
 
@@ -82,31 +154,148 @@ canvas.addEventListener("keyup", function (e) {
 //Funktion för rörelse
 function move() {
   if (UP) {
-    mainBall.acc_y = -mainBall.acceleration;
+    mainBall.acc.y = -mainBall.acceleration;
   }
   if (!UP) {
-    mainBall.acc_y = 0;
+    mainBall.acc.y = 0;
   }
-  //Velocity påvärkas av accerleration
-  mainBall.vel_y += mainBall.acc_y;
-  mainBall.vel_y *= 1 - friction;
-  mainBall.y += mainBall.vel_y;
+}
+
+let distanceVector = new Vector(0, 0);
+
+function round(numver, precision) {
+  let factor = 10 ** precision;
+  return Math.round(number * factor) / factor;
+}
+
+function closestPointBW(b1, w1) {
+  let ballToWallStart = w1.start.subtr(b1.pos);
+  if (Vector.dot(w1.wallUnit(), ballToWallStart) > 0) {
+    return w1.start;
+  }
+
+  let wallEndToBall = b1.pos.subtr(w1.end);
+  if (Vector.dot(w1.wallUnit(), wallEndToBall) > 0) {
+    return w1.end;
+  }
+
+  let closestDist = Vector.dot(w1.wallUnit(), ballToWallStart);
+  let closestVect = w1.wallUnit().mult(closestDist);
+  return w1.start.subtr(closestVect);
+}
+
+function coll_det_bb(b1, b2) {
+  if (b1.r + b2.r >= b1.pos.subtr(b2.pos).mag()) {
+    return true;
+  } else return false;
+}
+
+function pen_res_bb(b1, b2) {
+  let dist = b1.pos.subtr(b2.pos);
+  let pen_depth = b1.r + b2.r - dist.mag();
+  let pen_res = dist.unit().mult(pen_depth / 2);
+  b1.pos = b1.pos.add(pen_res);
+  b2.pos = b2.pos.add(pen_res.mult(-1));
+}
+
+function coll_ress_bb(b1, b2) {
+  let normal = b1.pos.subtr(b2.pos).unit();
+  let relVel = b1.vel.subtr(b2.vel);
+  let sepVel = Vector.dot(relVel, normal);
+  let newSepVel = -sepVel * elasticity;
+
+  let vesp_diff = newSepVel - sepVel;
+  let impulse = vesp_diff / (b1.inv_m + b2.inv_m);
+  let impulseVec = normal.mult(impulse);
+
+  b1.vel = b1.vel.add(impulseVec.mult(b1.inv_m));
+  b2.vel = b2.vel.add(impulseVec.mult(-b2.inv_m));
+}
+
+function coll_det_bw(b1, w1) {
+  let ballToClosest = closestPointBW(b1, w1).subtr(b1.pos);
+  if (ballToClosest.mag() <= b1.r) {
+    return true;
+  }
+}
+
+function pen_res_bw(b1, w1) {
+  let penVect = b1.pos.subtr(closestPointBW(b1, w1));
+  b1.pos = b1.pos.add(penVect.unit().mult(b1.r - penVect.mag()));
+}
+
+function coll_res_bw(b1, w1) {
+  let normal = b1.pos.subtr(closestPointBW(b1, w1)).unit();
+  let sepVel = Vector.dot(b1.vel, normal);
+  let newSepVel = -sepVel * elasticity;
+  let vesp_diff = sepVel - newSepVel;
+  b1.vel = b1.vel.add(normal.mult(-vesp_diff));
 }
 
 //Animerar canvas varje frame
 function mainLoop() {
-  requestAnimationFrame(mainLoop);
   //clear canvas
   ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
   move();
-  ballList.forEach((b) => {
+  ballList.forEach((b, index) => {
     b.drawBall();
-    b.displayLine();
+    b.reposition();
+
+    wallList.forEach((w) => {
+      if (coll_det_bw(ballList[index], w)) {
+        pen_res_bw(ballList[index], w);
+        coll_res_bw(ballList[index], w);
+      }
+    });
+
+    for (let i = index + 1; i < ballList.length; i++) {
+      if (coll_det_bb(ballList[index], ballList[i])) {
+        pen_res_bb(ballList[index], ballList[i]);
+        coll_ress_bb(ballList[index], ballList[i]);
+      }
+    }
   });
+
+  wallList.forEach((w) => {
+    w.drawWall();
+  });
+
+  requestAnimationFrame(mainLoop);
 }
 
 //Definerar bollarna
-let mainBall = new Ball(160, 380, 20, "white");
-let Ball1 = new Ball(160, 180, 20, "red");
+let mainBall = new Ball(160, 380, radius, 17, "white");
+
+let Ball1 = new Ball(160, 180, radius, 17, "red");
+
+let Ball2 = new Ball(150, 168, radius, 17, "red");
+let Ball3 = new Ball(170, 168, radius, 17, "red");
+
+let Ball4 = new Ball(140, 156, radius, 5, "red");
+let Ball5 = new Ball(160, 156, radius, 5, "red");
+let Ball6 = new Ball(180, 156, radius, 5, "red");
+
+let Ball7 = new Ball(115, 138, radius, 5, "red");
+let Ball8 = new Ball(140, 144, radius, 5, "red");
+let Ball9 = new Ball(165, 144, radius, 5, "red");
+let Ball10 = new Ball(190, 144, radius, 5, "red");
+
+let Ball11 = new Ball(105, 115, radius, 5, "red");
+let Ball12 = new Ball(130, 115, radius, 5, "red");
+let Ball13 = new Ball(155, 115, radius, 5, "red");
+let Ball14 = new Ball(185, 115, radius, 5, "red");
+let Ball15 = new Ball(205, 115, radius, 5, "red");
+
+let edge1 = new Wall(0, 0, 320, 0);
+let edge2 = new Wall(0, 0, 0, 480);
+let edge3 = new Wall(0, 480, 320, 480);
+let edge4 = new Wall(320, 0, 320, 480);
+
+let edgeBall1 = new Ball(0, 0, 12, 0, "black");
+let edgeBall2 = new Ball(0, 240, 12, 0, "black");
+let edgeBall3 = new Ball(0, 480, 12, 0, "black");
+let edgeBall4 = new Ball(320, 0, 12, 0, "black");
+let edgeBall5 = new Ball(320, 240, 12, 0, "black");
+let edgeBall6 = new Ball(320, 480, 12, 0, "black");
 
 requestAnimationFrame(mainLoop);
