@@ -6,10 +6,14 @@ const ctx = canvas.getContext("2d");
 
 //Bools för att se ifall knappen är nertryckt
 let UP;
-let friction = 0.05;
+let friction = 0.07;
 let elasticity = 1;
 
 let radius = 12;
+
+let hasBeenPressed = 0;
+
+let cueDist = 0;
 
 //Array med alla bollar
 const ballList = [];
@@ -134,6 +138,44 @@ class Wall {
   }
 }
 
+class Cue {
+  constructor(x1, y1, x2, y2) {
+    this.start = new Vector(x1, y1);
+    this.end = new Vector(x2, y2);
+  }
+
+  drawCue() {
+    ctx.beginPath();
+    ctx.moveTo(this.start.x, this.start.y);
+    ctx.lineTo(this.end.x, this.end.y);
+    ctx.strokeStyle = "black";
+    ctx.stroke();
+  }
+
+  moveQue() {
+    let push = new Vector(0, 1);
+    if (UP && cueDist < 40) {
+      cueDist++;
+      console.log(cueDist);
+      this.start = this.start.add(push);
+      this.end = this.end.add(push);
+    } else if (!UP && hasBeenPressed > 0) {
+      this.start = new Vector(160, 400);
+      this.end = new Vector(160, 440);
+
+      let initialVel = new Vector(0, -cueDist);
+      mainBall.vel = mainBall.vel.add(initialVel);
+
+      hasBeenPressed = 0;
+      cueDist = 0;
+    }
+  }
+  repositionCue() {
+    this.start = new Vector(mainBall.pos.x, mainBall.pos.y + 20);
+    this.end = new Vector(mainBall.pos.x, mainBall.pos.y + 100);
+  }
+}
+
 //Event handler för att lyssna på när man trycker ner en knapp
 canvas.addEventListener("keydown", function (e) {
   //Lyssna och hitta vad key har för kod
@@ -148,15 +190,16 @@ canvas.addEventListener("keydown", function (e) {
 canvas.addEventListener("keyup", function (e) {
   if (e.keyCode === 38) {
     UP = false;
+    hasBeenPressed++;
   }
 });
 
 //Funktion för rörelse
 function move() {
   if (UP) {
-    //mainBall.acc.y = -mainBall.acceleration;
-    let initialVel = new Vector(0, -5);
-    mainBall.vel = mainBall.vel.add(initialVel);
+    mainBall.acc.y = -mainBall.acceleration;
+    //let initialVel = new Vector(0, -5);
+    //mainBall.vel = mainBall.vel.add(initialVel);
   }
   if (!UP) {
     mainBall.acc.y = 0;
@@ -165,7 +208,7 @@ function move() {
 
 let distanceVector = new Vector(0, 0);
 
-function round(numver, precision) {
+function round(number, precision) {
   let factor = 10 ** precision;
   return Math.round(number * factor) / factor;
 }
@@ -238,7 +281,8 @@ function coll_res_bw(b1, w1) {
 function mainLoop() {
   //clear canvas
   ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-  move();
+  //move();
+  cue.moveQue();
   ballList.forEach((b, index) => {
     b.drawBall();
     b.reposition();
@@ -262,16 +306,23 @@ function mainLoop() {
     w.drawWall();
   });
 
+  if (round(mainBall.vel.y, 2) === 0 && !UP && round(mainBall.vel.x, 2) === 0) {
+    cue.repositionCue();
+    cue.drawCue();
+  } else if (round(mainBall.vel.y, 2) === 0 && round(mainBall.vel.x, 2) === 0) {
+    cue.drawCue();
+  }
+
   requestAnimationFrame(mainLoop);
 }
 
 //Definerar bollarna
-let mainBall = new Ball(160, 380, radius, 17, "white");
+let mainBall = new Ball(160, 380, radius, 5, "white");
 
-let Ball1 = new Ball(160, 180, radius, 17, "red");
+let Ball1 = new Ball(160, 180, radius, 5, "red");
 
-let Ball2 = new Ball(150, 168, radius, 17, "red");
-let Ball3 = new Ball(170, 168, radius, 17, "red");
+let Ball2 = new Ball(150, 168, radius, 5, "red");
+let Ball3 = new Ball(170, 168, radius, 5, "red");
 
 let Ball4 = new Ball(140, 156, radius, 5, "red");
 let Ball5 = new Ball(160, 156, radius, 5, "red");
@@ -299,5 +350,7 @@ let edgeBall3 = new Ball(0, 480, 12, 0, "black");
 let edgeBall4 = new Ball(320, 0, 12, 0, "black");
 let edgeBall5 = new Ball(320, 240, 12, 0, "black");
 let edgeBall6 = new Ball(320, 480, 12, 0, "black");
+
+let cue = new Cue(160, 400, 160, 440);
 
 requestAnimationFrame(mainLoop);
