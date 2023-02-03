@@ -6,7 +6,7 @@ const ctx = canvas.getContext("2d");
 
 //Bools för att se ifall knappen är nertryckt
 let UP;
-let friction = 0.1;
+let friction = 0.05;
 let elasticity = 1;
 
 let radius = 12;
@@ -154,7 +154,9 @@ canvas.addEventListener("keyup", function (e) {
 //Funktion för rörelse
 function move() {
   if (UP) {
-    mainBall.acc.y = -mainBall.acceleration;
+    //mainBall.acc.y = -mainBall.acceleration;
+    let initialVel = new Vector(0, -5);
+    mainBall.vel = mainBall.vel.add(initialVel);
   }
   if (!UP) {
     mainBall.acc.y = 0;
