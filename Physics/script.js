@@ -4,9 +4,14 @@ console.log("Connected");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
+//Tid för mellan frames
+let lastTime;
+let startTime;
+let dt;
+
 //Bools för att se ifall knappen är nertryckt
 let UP;
-let friction = 0.07;
+let friction = 5;
 let elasticity = 1;
 
 let radius = 12;
@@ -109,12 +114,16 @@ class Ball {
     this.acc.drawVec(this.x, this.y, 50, "red");
   }
 
-  reposition() {
-    this.acc = this.acc.unit().mult(this.acceleration);
+  reposition(dt) {
+    this.acceleration = this.inv_m * -friction;
+    console.log(this.acc.y);
+
+    this.acc = this.acc.mult(this.acceleration);
+
     //Velocity påvärkas av accerleration
-    this.vel = this.vel.add(this.acc);
-    this.vel = this.vel.mult(1 - friction);
-    this.pos = this.pos.add(this.vel);
+    this.vel = this.vel.add(this.acc.mult(dt));
+    //this.vel = this.vel.mult(1 - friction);
+    this.pos = this.pos.add(this.vel.mult(dt));
   }
 }
 
@@ -142,6 +151,7 @@ class Cue {
   constructor(x1, y1, x2, y2) {
     this.start = new Vector(x1, y1);
     this.end = new Vector(x2, y2);
+    let spring_konst = 3;
   }
 
   drawCue() {
@@ -156,15 +166,17 @@ class Cue {
     let push = new Vector(0, 1);
     if (UP && cueDist < 40) {
       cueDist++;
-      console.log(cueDist);
       this.start = this.start.add(push);
       this.end = this.end.add(push);
     } else if (!UP && hasBeenPressed > 0) {
       this.start = new Vector(160, 400);
       this.end = new Vector(160, 440);
 
-      let initialVel = new Vector(0, -cueDist);
-      mainBall.vel = mainBall.vel.add(initialVel);
+      /*let V_initial_ball = 0;
+      V_initial_ball = (2 * 3 * cueDist ** 2) / mainBall.m;
+      mainBall.vel.y = -V_initial_ball;*/
+
+      mainBall.acc.y = mainBall.inv_m * (30 * cueDist);
 
       hasBeenPressed = 0;
       cueDist = 0;
@@ -197,7 +209,9 @@ canvas.addEventListener("keyup", function (e) {
 //Funktion för rörelse
 function move() {
   if (UP) {
-    mainBall.acc.y = -mainBall.acceleration;
+    // mainBall.acc.y = -mainBall.acceleration;
+    //console.log("heheh");
+    //mainBall.acc.y = mainBall.inv_m * (50 - friction);
     //let initialVel = new Vector(0, -5);
     //mainBall.vel = mainBall.vel.add(initialVel);
   }
@@ -278,14 +292,26 @@ function coll_res_bw(b1, w1) {
 }
 
 //Animerar canvas varje frame
-function mainLoop() {
+function mainLoop(currentTime) {
   //clear canvas
   ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-  //move();
+
+  //Tid saker
+  if (!startTime) {
+    startTime = currentTime;
+  }
+  if (!lastTime) {
+    lastTime = currentTime;
+  }
+  dt = (currentTime - lastTime) / 1000;
+  //console.log(dt);
+  lastTime = currentTime;
+
+  //Move saker
   cue.moveQue();
   ballList.forEach((b, index) => {
     b.drawBall();
-    b.reposition();
+    b.reposition(dt);
 
     wallList.forEach((w) => {
       if (coll_det_bw(ballList[index], w)) {
@@ -319,7 +345,7 @@ function mainLoop() {
 //Definerar bollarna
 let mainBall = new Ball(160, 380, radius, 5, "white");
 
-let Ball1 = new Ball(160, 180, radius, 5, "red");
+/*let Ball1 = new Ball(160, 180, radius, 5, "red");
 
 let Ball2 = new Ball(150, 168, radius, 5, "red");
 let Ball3 = new Ball(170, 168, radius, 5, "red");
@@ -337,19 +363,19 @@ let Ball11 = new Ball(105, 115, radius, 5, "red");
 let Ball12 = new Ball(130, 115, radius, 5, "red");
 let Ball13 = new Ball(155, 115, radius, 5, "red");
 let Ball14 = new Ball(185, 115, radius, 5, "red");
-let Ball15 = new Ball(205, 115, radius, 5, "red");
+let Ball15 = new Ball(205, 115, radius, 5, "red");*/
 
 let edge1 = new Wall(0, 0, 320, 0);
 let edge2 = new Wall(0, 0, 0, 480);
 let edge3 = new Wall(0, 480, 320, 480);
 let edge4 = new Wall(320, 0, 320, 480);
 
-let edgeBall1 = new Ball(0, 0, 12, 0, "black");
+/*let edgeBall1 = new Ball(0, 0, 12, 0, "black");
 let edgeBall2 = new Ball(0, 240, 12, 0, "black");
 let edgeBall3 = new Ball(0, 480, 12, 0, "black");
 let edgeBall4 = new Ball(320, 0, 12, 0, "black");
 let edgeBall5 = new Ball(320, 240, 12, 0, "black");
-let edgeBall6 = new Ball(320, 480, 12, 0, "black");
+let edgeBall6 = new Ball(320, 480, 12, 0, "black");*/
 
 let cue = new Cue(160, 400, 160, 440);
 
