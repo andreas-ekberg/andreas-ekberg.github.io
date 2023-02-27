@@ -11,7 +11,7 @@ let dt;
 
 //Bools för att se ifall knappen är nertryckt
 let UP;
-let friction = 5;
+let friction = 10;
 let elasticity = 1;
 
 let radius = 12;
@@ -115,15 +115,22 @@ class Ball {
   }
 
   reposition(dt) {
-    this.acceleration = this.inv_m * -friction;
-    console.log(this.acc.y);
+    //this.acc = this.acc.mult(this.acceleration);
+    this.acceleration = 4;
+    //console.log(Math.floor(this.vel.y));
+    if (Math.floor(this.vel.y) > 5 || Math.floor(this.vel.y) < -5) {
+      //Velocity påvärkas av accerleration
+      console.log("hej");
+    } else {
+      console.log("då");
+      //  console.log(Math.floor(this.vel.y));
+    }
+    this.acc = this.vel.unit().mult(-this.acceleration);
 
-    this.acc = this.acc.mult(this.acceleration);
+    this.vel = this.vel.add(this.acc.mult(1));
 
-    //Velocity påvärkas av accerleration
-    this.vel = this.vel.add(this.acc.mult(dt));
     //this.vel = this.vel.mult(1 - friction);
-    this.pos = this.pos.add(this.vel.mult(dt));
+    this.pos = this.pos.add(this.vel.mult(0.015));
   }
 }
 
@@ -172,11 +179,11 @@ class Cue {
       this.start = new Vector(160, 400);
       this.end = new Vector(160, 440);
 
-      /*let V_initial_ball = 0;
+      let V_initial_ball = 0;
       V_initial_ball = (2 * 3 * cueDist ** 2) / mainBall.m;
-      mainBall.vel.y = -V_initial_ball;*/
+      mainBall.vel.y = -V_initial_ball;
 
-      mainBall.acc.y = mainBall.inv_m * (30 * cueDist);
+      //mainBall.acc.y = -(mainBall.inv_m * (30 * cueDist));
 
       hasBeenPressed = 0;
       cueDist = 0;
@@ -303,7 +310,7 @@ function mainLoop(currentTime) {
   if (!lastTime) {
     lastTime = currentTime;
   }
-  dt = (currentTime - lastTime) / 1000;
+  dt = currentTime - lastTime / 1000;
   //console.log(dt);
   lastTime = currentTime;
 
@@ -311,7 +318,14 @@ function mainLoop(currentTime) {
   cue.moveQue();
   ballList.forEach((b, index) => {
     b.drawBall();
-    b.reposition(dt);
+    if (Math.floor(b.vel.y) < -5 || Math.floor(b.vel.y) > 5) {
+      b.reposition(dt);
+    } else {
+      cue.repositionCue();
+      cue.drawCue();
+    }
+
+    //console.log("hej");
 
     wallList.forEach((w) => {
       if (coll_det_bw(ballList[index], w)) {
@@ -345,7 +359,7 @@ function mainLoop(currentTime) {
 //Definerar bollarna
 let mainBall = new Ball(160, 380, radius, 5, "white");
 
-/*let Ball1 = new Ball(160, 180, radius, 5, "red");
+let Ball1 = new Ball(160, 180, radius, 5, "red");
 
 let Ball2 = new Ball(150, 168, radius, 5, "red");
 let Ball3 = new Ball(170, 168, radius, 5, "red");
@@ -363,7 +377,7 @@ let Ball11 = new Ball(105, 115, radius, 5, "red");
 let Ball12 = new Ball(130, 115, radius, 5, "red");
 let Ball13 = new Ball(155, 115, radius, 5, "red");
 let Ball14 = new Ball(185, 115, radius, 5, "red");
-let Ball15 = new Ball(205, 115, radius, 5, "red");*/
+let Ball15 = new Ball(205, 115, radius, 5, "red");
 
 let edge1 = new Wall(0, 0, 320, 0);
 let edge2 = new Wall(0, 0, 0, 480);
