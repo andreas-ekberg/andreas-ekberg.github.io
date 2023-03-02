@@ -124,9 +124,9 @@ class Ball {
 
     this.vel = this.vel.add(this.acc.mult(0.15));
 
-    //this.pos = this.pos.add(this.vel.mult(0.015));
+    this.pos = this.pos.add(this.vel.mult(0.015));
 
-    this.pos.y = this.pos.y + this.angularVel * this.r * 0.015;
+    //this.pos.y = this.pos.y + this.angularVel * this.r * 0.015;
     console.log(this.angularVel);
   }
 }
@@ -176,11 +176,11 @@ class Cue {
       this.start = new Vector(160, 400);
       this.end = new Vector(160, 440);
 
-      //let V_initial_ball = 0;
-      //V_initial_ball = (2 * 1 * cueDist ** 2) / mainBall.m;
-      //mainBall.vel.y = -V_initial_ball;
+      let V_initial_ball = 0;
+      V_initial_ball = (2 * 1 * cueDist ** 2) / mainBall.m;
+      mainBall.vel.y = -V_initial_ball;
 
-      mainBall.angularVel = -40;
+      //mainBall.angularVel = -40;
       //mainBall.acc.y = -(mainBall.inv_m * (30 * cueDist));
 
       hasBeenPressed = 0;
