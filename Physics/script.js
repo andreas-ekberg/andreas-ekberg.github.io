@@ -169,15 +169,33 @@ class Cue {
   constructor(x1, y1, x2, y2) {
     this.start = new Vector(x1, y1);
     this.end = new Vector(x2, y2);
+    this.length = this.end.subtr(this.start).mag();
+    this.angle = 0;
+
+    //Refrences
+
+    this.refStart = new Vector(x1, y1);
+    this.refEnd = new Vector(x2, y2);
+    this.refUnit = this.end.subtr(this.start).unit();
+
     let spring_konst = 3;
   }
 
   drawCue() {
+    let rotMat = rotMx(this.angle);
+    let newDir = rotMat.multiplyVector(this.refUnit);
+
     ctx.beginPath();
     ctx.moveTo(this.start.x, this.start.y);
     ctx.lineTo(this.end.x, this.end.y);
     ctx.strokeStyle = "black";
     ctx.stroke();
+  }
+
+  keyControl() {
+    if (LEFT) {
+      this.angle -= 0.05;
+    }
   }
 
   moveQue() {
@@ -195,12 +213,19 @@ class Cue {
       //mainBall.vel.y = -V_initial_ball;
 
       mainBall.angularVelocity.y = -60;
-      console.log(mainBall.angularVelocity);
 
       hasBeenPressed = 0;
       cueDist = 0;
     }
   }
+
+  rotateCue() {
+    if (LEFT) {
+      this.angle -= 0.05;
+      console.log(this.angle);
+    }
+  }
+
   repositionCue() {
     this.start = new Vector(mainBall.pos.x, mainBall.pos.y + 20);
     this.end = new Vector(mainBall.pos.x, mainBall.pos.y + 100);
@@ -216,8 +241,7 @@ canvas.addEventListener("keydown", function (e) {
     UP = true;
   }
   if (e.keyCode === 37) {
-    LEFT = false;
-    hasBeenPressed++;
+    LEFT = true;
   }
 });
 
@@ -228,8 +252,7 @@ canvas.addEventListener("keyup", function (e) {
     hasBeenPressed++;
   }
   if (e.keyCode === 37) {
-    UP = false;
-    hasBeenPressed++;
+    LEFT = false;
   }
 });
 
@@ -240,7 +263,7 @@ function round(number, precision) {
   return Math.round(number * factor) / factor;
 }
 
-function rotMax(angle) {
+function rotMx(angle) {
   let mx = new Matrix(2, 2);
   mx.data[0][0] = Math.cos(angle);
   mx.data[0][1] = -Math.sin(angle);
@@ -362,7 +385,8 @@ function mainLoop(currentTime) {
     w.drawWall();
   });
   if (round(mainBall.vel.y, 2) === 0 && !UP && round(mainBall.vel.x, 2) === 0) {
-    cue.repositionCue();
+    // cue.repositionCue();
+    cue.rotateCue();
     cue.drawCue();
   } else if (round(mainBall.vel.y, 2) === 0 && round(mainBall.vel.x, 2) === 0) {
     cue.drawCue();
