@@ -12,6 +12,8 @@ let dt;
 //Bools för att se ifall knappen är nertryckt
 let UP;
 let LEFT;
+let RIGHT;
+
 let friction = 0.03;
 let elasticity = 0.9;
 
@@ -92,6 +94,7 @@ class Matrix {
     let result = new Vector(0, 0);
     result.x = this.data[0][0] * vec.x + this.data[0][1] * vec.y;
     result.y = this.data[1][0] * vec.x + this.data[1][1] * vec.y;
+    return result;
   }
 }
 
@@ -167,15 +170,17 @@ class Wall {
 
 class Cue {
   constructor(x1, y1, x2, y2) {
-    this.start = new Vector(x1, y1);
-    this.end = new Vector(x2, y2);
-    this.length = this.end.subtr(this.start).mag();
-    this.angle = 0;
-
     //Refrences
-
+    this.ballRef = new Vector(mainBall.pos.x, mainBall.pos.y);
     this.refStart = new Vector(x1, y1);
     this.refEnd = new Vector(x2, y2);
+
+    this.start = new Vector(x1, y1);
+    this.end = new Vector(x2, y2);
+    this.endLength = this.end.subtr(this.ballRef).mag();
+    this.startLength = this.start.subtr(this.ballRef).mag();
+    this.angle = 0;
+
     this.refUnit = this.end.subtr(this.start).unit();
 
     let spring_konst = 3;
@@ -184,18 +189,14 @@ class Cue {
   drawCue() {
     let rotMat = rotMx(this.angle);
     let newDir = rotMat.multiplyVector(this.refUnit);
+    this.start = this.ballRef.add(newDir.mult(this.startLength));
+    this.end = this.ballRef.add(newDir.mult(this.endLength));
 
     ctx.beginPath();
     ctx.moveTo(this.start.x, this.start.y);
     ctx.lineTo(this.end.x, this.end.y);
     ctx.strokeStyle = "black";
     ctx.stroke();
-  }
-
-  keyControl() {
-    if (LEFT) {
-      this.angle -= 0.05;
-    }
   }
 
   moveQue() {
@@ -221,8 +222,10 @@ class Cue {
 
   rotateCue() {
     if (LEFT) {
+      this.angle += 0.05;
+    }
+    if (RIGHT) {
       this.angle -= 0.05;
-      console.log(this.angle);
     }
   }
 
@@ -243,6 +246,9 @@ canvas.addEventListener("keydown", function (e) {
   if (e.keyCode === 37) {
     LEFT = true;
   }
+  if (e.keyCode === 39) {
+    RIGHT = true;
+  }
 });
 
 //Event handler för att lyssna ifall man släpper en knapp
@@ -253,6 +259,9 @@ canvas.addEventListener("keyup", function (e) {
   }
   if (e.keyCode === 37) {
     LEFT = false;
+  }
+  if (e.keyCode === 39) {
+    RIGHT = false;
   }
 });
 
@@ -430,6 +439,6 @@ let edgeBall4 = new Ball(320, 0, 12, 0, "black");
 let edgeBall5 = new Ball(320, 240, 12, 0, "black");
 let edgeBall6 = new Ball(320, 480, 12, 0, "black");
 
-let cue = new Cue(160, 400, 160, 440);
+let cue = new Cue(160, 400, 160, 480);
 
 requestAnimationFrame(mainLoop);
