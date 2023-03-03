@@ -99,7 +99,7 @@ class Matrix {
 }
 
 class Ball {
-  constructor(x, y, r, m, color) {
+  constructor(x, y, r, m, color, type) {
     //Posistion i x och y
     this.pos = new Vector(x, y);
     //Radien
@@ -107,6 +107,7 @@ class Ball {
     this.color = color;
 
     this.m = m;
+    this.type = type;
     if (this.m === 0) {
       this.inv_m = 0;
     } else this.inv_m = 1 / this.m;
@@ -124,15 +125,38 @@ class Ball {
   //Funktion för att rita en boll som tar in 4 variabler
   // x-kord, y-kord, radius, färg
   drawBall() {
-    ctx.beginPath();
     //Ritar en cirkel
-    ctx.arc(this.pos.x, this.pos.y, this.r, 0, 2 * Math.PI);
-    //Fyller den med färg
-    ctx.fillStyle = this.color;
+    if (this.type === "fill") {
+      ctx.beginPath();
+      ctx.arc(this.pos.x, this.pos.y, this.r, 0, 2 * Math.PI);
+
+      //Fyller den med färg
+      ctx.fillStyle = this.color;
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    if (this.type === "half") {
+      ctx.beginPath();
+      ctx.arc(this.pos.x, this.pos.y, this.r, 0, 2 * Math.PI);
+
+      //Fyller den med färg
+      ctx.fillStyle = this.color;
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(this.pos.x, this.pos.y, this.r - 4, 0, 2 * Math.PI);
+      //ctx.strokeStyle = "white";
+
+      //Fyller den med färg
+      ctx.fillStyle = "White";
+      ctx.fill();
+    }
+    //ctx.arc(this.pos.x, this.pos.y, this.r, Math.PI, 2 * Math.PI);
+
     //Kanten på bollen
-    ctx.stroke();
     //fyller den
-    ctx.fill();
   }
 
   // för att rita ut linjer för acceleration och velocity
@@ -189,8 +213,8 @@ class Cue {
   drawCue() {
     let rotMat = rotMx(this.angle);
     let newDir = rotMat.multiplyVector(this.refUnit);
-    this.start = this.ballRef.add(newDir.mult(this.startLength));
-    this.end = this.ballRef.add(newDir.mult(this.endLength));
+    this.start = mainBall.pos.add(newDir.mult(this.startLength));
+    this.end = mainBall.pos.add(newDir.mult(this.endLength));
 
     ctx.beginPath();
     ctx.moveTo(this.start.x, this.start.y);
@@ -206,14 +230,10 @@ class Cue {
       this.start = this.start.add(push);
       this.end = this.end.add(push);
     } else if (!UP && hasBeenPressed > 0) {
-      this.start = new Vector(160, 400);
-      this.end = new Vector(160, 440);
+      let pushVector = this.start.subtr(this.end).unit();
+      mainBall.angularVelocity = pushVector.mult(80);
 
-      //let V_initial_ball = 0;
-      //V_initial_ball = (2 * 1 * cueDist ** 2) / mainBall.m;
-      //mainBall.vel.y = -V_initial_ball;
-
-      mainBall.angularVelocity.y = -60;
+      //mainBall.angularVelocity.y = -60;
 
       hasBeenPressed = 0;
       cueDist = 0;
@@ -264,8 +284,6 @@ canvas.addEventListener("keyup", function (e) {
     RIGHT = false;
   }
 });
-
-let distanceVector = new Vector(0, 0);
 
 function round(number, precision) {
   let factor = 10 ** precision;
@@ -393,11 +411,18 @@ function mainLoop(currentTime) {
   wallList.forEach((w) => {
     w.drawWall();
   });
-  if (round(mainBall.vel.y, 2) === 0 && !UP && round(mainBall.vel.x, 2) === 0) {
-    // cue.repositionCue();
+  if (
+    Math.round(mainBall.vel.y) === 0 &&
+    !UP &&
+    Math.round(mainBall.vel.y) === 0
+  ) {
+    cue.repositionCue();
     cue.rotateCue();
     cue.drawCue();
-  } else if (round(mainBall.vel.y, 2) === 0 && round(mainBall.vel.x, 2) === 0) {
+  } else if (
+    Math.round(mainBall.vel.y) === 0 &&
+    Math.round(mainBall.vel.y) === 0
+  ) {
     cue.drawCue();
   }
 
@@ -405,39 +430,39 @@ function mainLoop(currentTime) {
 }
 
 //Definerar bollarna
-let mainBall = new Ball(160, 380, radius, 5, "white");
+let mainBall = new Ball(160, 380, radius, 5, "white", "fill");
 
-let Ball1 = new Ball(160, 180, radius, 5, "red");
+let Ball1 = new Ball(160, 180, radius, 5, "red", "half");
 
-let Ball2 = new Ball(150, 168, radius, 5, "red");
-let Ball3 = new Ball(170, 168, radius, 5, "red");
+let Ball2 = new Ball(150, 168, radius, 5, "red", "fill");
+let Ball3 = new Ball(170, 168, radius, 5, "red", "fill");
 
-let Ball4 = new Ball(140, 156, radius, 5, "red");
-let Ball5 = new Ball(160, 156, radius, 5, "red");
-let Ball6 = new Ball(180, 156, radius, 5, "red");
+let Ball4 = new Ball(140, 156, radius, 5, "red", "fill");
+let Ball5 = new Ball(160, 156, radius, 5, "red", "fill");
+let Ball6 = new Ball(180, 156, radius, 5, "red", "fill");
 
-let Ball7 = new Ball(115, 138, radius, 5, "red");
-let Ball8 = new Ball(140, 144, radius, 5, "red");
-let Ball9 = new Ball(165, 144, radius, 5, "red");
-let Ball10 = new Ball(190, 144, radius, 5, "red");
+let Ball7 = new Ball(115, 138, radius, 5, "red", "fill");
+let Ball8 = new Ball(140, 144, radius, 5, "red", "fill");
+let Ball9 = new Ball(165, 144, radius, 5, "red", "fill");
+let Ball10 = new Ball(190, 144, radius, 5, "red", "fill");
 
-let Ball11 = new Ball(105, 115, radius, 5, "red");
-let Ball12 = new Ball(130, 115, radius, 5, "red");
-let Ball13 = new Ball(155, 115, radius, 5, "red");
-let Ball14 = new Ball(185, 115, radius, 5, "red");
-let Ball15 = new Ball(205, 115, radius, 5, "red");
+let Ball11 = new Ball(105, 115, radius, 5, "red", "fill");
+let Ball12 = new Ball(130, 115, radius, 5, "red", "fill");
+let Ball13 = new Ball(155, 115, radius, 5, "red", "fill");
+let Ball14 = new Ball(185, 115, radius, 5, "red", "fill");
+let Ball15 = new Ball(205, 115, radius, 5, "red", "fill");
 
 let edge1 = new Wall(0, 0, 320, 0);
 let edge2 = new Wall(0, 0, 0, 480);
 let edge3 = new Wall(0, 480, 320, 480);
 let edge4 = new Wall(320, 0, 320, 480);
 
-let edgeBall1 = new Ball(0, 0, 12, 0, "black");
+/*let edgeBall1 = new Ball(0, 0, 12, 0, "black");
 let edgeBall2 = new Ball(0, 240, 12, 0, "black");
 let edgeBall3 = new Ball(0, 480, 12, 0, "black");
 let edgeBall4 = new Ball(320, 0, 12, 0, "black");
 let edgeBall5 = new Ball(320, 240, 12, 0, "black");
-let edgeBall6 = new Ball(320, 480, 12, 0, "black");
+let edgeBall6 = new Ball(320, 480, 12, 0, "black");*/
 
 let cue = new Cue(160, 400, 160, 480);
 
