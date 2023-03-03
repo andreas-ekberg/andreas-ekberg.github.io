@@ -99,7 +99,7 @@ class Matrix {
 }
 
 class Ball {
-  constructor(x, y, r, m, color, type) {
+  constructor(x, y, r, m, color, type, number) {
     //Posistion i x och y
     this.pos = new Vector(x, y);
     //Radien
@@ -108,6 +108,7 @@ class Ball {
 
     this.m = m;
     this.type = type;
+    this.number = number;
     if (this.m === 0) {
       this.inv_m = 0;
     } else this.inv_m = 1 / this.m;
@@ -133,11 +134,16 @@ class Ball {
       //Fyller den med färg
       ctx.fillStyle = this.color;
       ctx.fill();
+
+      ctx.fillStyle = "white";
+      ctx.fillText(this.number, this.pos.x, this.pos.y + 3);
+      ctx.textAlign = "center";
       ctx.stroke();
     }
 
     if (this.type === "half") {
       ctx.beginPath();
+
       ctx.arc(this.pos.x, this.pos.y, this.r, 0, 2 * Math.PI);
 
       //Fyller den med färg
@@ -152,6 +158,9 @@ class Ball {
       //Fyller den med färg
       ctx.fillStyle = "White";
       ctx.fill();
+      ctx.fillStyle = "black";
+      ctx.textAlign = "center";
+      ctx.fillText(this.number, this.pos.x, this.pos.y + 3);
     }
     //ctx.arc(this.pos.x, this.pos.y, this.r, Math.PI, 2 * Math.PI);
 
@@ -430,27 +439,27 @@ function mainLoop(currentTime) {
 }
 
 //Definerar bollarna
-let mainBall = new Ball(160, 380, radius, 5, "white", "fill");
+let mainBall = new Ball(160, 380, radius, 5, "white", "fill", "");
 
-let Ball1 = new Ball(160, 180, radius, 5, "red", "half");
+let Ball1 = new Ball(160, 190, radius, 5, "red", "half", "11");
 
-let Ball2 = new Ball(150, 168, radius, 5, "red", "fill");
-let Ball3 = new Ball(170, 168, radius, 5, "red", "fill");
+let Ball3 = new Ball(145, 170, radius, 5, "blue", "fill", "2");
+let Ball12 = new Ball(170, 170, radius, 5, "yellow", "half", "9");
 
-let Ball4 = new Ball(140, 156, radius, 5, "red", "fill");
-let Ball5 = new Ball(160, 156, radius, 5, "red", "fill");
-let Ball6 = new Ball(180, 156, radius, 5, "red", "fill");
+let Ball4 = new Ball(132, 149, radius, 5, "blue", "half", "10");
+let Ball15 = new Ball(157, 149, radius, 5, "black", "fill", "8");
+let Ball10 = new Ball(182, 148, radius, 5, "darkblue", "half", "12");
 
-let Ball7 = new Ball(115, 138, radius, 5, "red", "fill");
-let Ball8 = new Ball(140, 144, radius, 5, "red", "fill");
-let Ball9 = new Ball(165, 144, radius, 5, "red", "fill");
-let Ball10 = new Ball(190, 144, radius, 5, "red", "fill");
+let Ball7 = new Ball(120, 127, radius, 5, "darkgreen", "fill", "6");
+let Ball8 = new Ball(143, 127, radius, 5, "darkgreen", "half", "14");
+let Ball9 = new Ball(168, 127, radius, 5, "darkblue", "fill", "4");
+let Ball6 = new Ball(193, 127, radius, 5, "orange", "half", "13");
 
-let Ball11 = new Ball(105, 115, radius, 5, "red", "fill");
-let Ball12 = new Ball(130, 115, radius, 5, "red", "fill");
-let Ball13 = new Ball(155, 115, radius, 5, "red", "fill");
-let Ball14 = new Ball(185, 115, radius, 5, "red", "fill");
-let Ball15 = new Ball(205, 115, radius, 5, "red", "fill");
+let Ball11 = new Ball(106, 107, radius, 5, "yellow", "fill", "1");
+let Ball2 = new Ball(130, 108, radius, 5, "red", "fill", "3");
+let Ball5 = new Ball(155, 108, radius, 5, "orange", "fill", "5");
+let Ball13 = new Ball(181, 108, radius, 5, "darkred", "fill", "7");
+let Ball14 = new Ball(202, 109, radius, 5, "darkred", "half", "15");
 
 let edge1 = new Wall(0, 0, 320, 0);
 let edge2 = new Wall(0, 0, 0, 480);
