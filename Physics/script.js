@@ -11,6 +11,7 @@ let dt;
 
 //Bools för att se ifall knappen är nertryckt
 let UP;
+let LEFT;
 let friction = 0.03;
 let elasticity = 0.9;
 
@@ -73,6 +74,27 @@ class Vector {
   }
 }
 
+class Matrix {
+  constructor(rows, cols) {
+    this.rows = rows;
+    this.cols = cols;
+    this.data = [];
+
+    for (let i = 0; i < this.rows; i++) {
+      this.data[i] = [];
+      for (let j = 0; j < this.cols; j++) {
+        this.data[i][j] = 0;
+      }
+    }
+  }
+
+  multiplyVector(vec) {
+    let result = new Vector(0, 0);
+    result.x = this.data[0][0] * vec.x + this.data[0][1] * vec.y;
+    result.y = this.data[1][0] * vec.x + this.data[1][1] * vec.y;
+  }
+}
+
 class Ball {
   constructor(x, y, r, m, color) {
     //Posistion i x och y
@@ -117,20 +139,9 @@ class Ball {
   }
 
   reposition(dt) {
-    //this.acc = this.acc.mult(this.acceleration);
-    //this.acceleration = this.inv_m * -friction;
-
-    //this.acc = this.vel.unit().mult(this.acceleration);
-
-    //this.vel = this.vel.add(this.acc.mult(0.15));
-
-    //console.log(this.angularVelocity);
-
     this.vel = this.angularVelocity.mult(this.r);
     this.angularVelocity = this.angularVelocity.mult(1 - friction);
     this.pos = this.pos.add(this.vel.mult(dt));
-
-    //this.pos.y = this.pos.y + this.angularVel * this.r * 0.015;
   }
 }
 
@@ -204,6 +215,10 @@ canvas.addEventListener("keydown", function (e) {
   if (e.keyCode === 38) {
     UP = true;
   }
+  if (e.keyCode === 37) {
+    LEFT = false;
+    hasBeenPressed++;
+  }
 });
 
 //Event handler för att lyssna ifall man släpper en knapp
@@ -212,27 +227,26 @@ canvas.addEventListener("keyup", function (e) {
     UP = false;
     hasBeenPressed++;
   }
+  if (e.keyCode === 37) {
+    UP = false;
+    hasBeenPressed++;
+  }
 });
-
-//Funktion för rörelse
-function move() {
-  if (UP) {
-    // mainBall.acc.y = -mainBall.acceleration;
-    //console.log("heheh");
-    //mainBall.acc.y = mainBall.inv_m * (50 - friction);
-    //let initialVel = new Vector(0, -5);
-    //mainBall.vel = mainBall.vel.add(initialVel);
-  }
-  if (!UP) {
-    mainBall.acc.y = 0;
-  }
-}
 
 let distanceVector = new Vector(0, 0);
 
 function round(number, precision) {
   let factor = 10 ** precision;
   return Math.round(number * factor) / factor;
+}
+
+function rotMax(angle) {
+  let mx = new Matrix(2, 2);
+  mx.data[0][0] = Math.cos(angle);
+  mx.data[0][1] = -Math.sin(angle);
+  mx.data[1][0] = Math.sin(angle);
+  mx.data[1][1] = Math.cos(angle);
+  return mx;
 }
 
 function closestPointBW(b1, w1) {
