@@ -7,12 +7,24 @@
         display: block;
         margin: 0 auto;
         background: green;
+        outline: none;
       }
     </style>
+
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <title>Billiard</title>
   </head>
   <body>
-    <canvas id="canvas" tabindex="0" width="320" height="480"></canvas>
-
+    <div class="containerboard">
+      <h2>Epic billiard game made in Javascript by group 7.</h2>
+      <canvas id="canvas" tabindex="0" width="320" height="480"></canvas>
+      <button class="reload" type="button" onClick="window.location.reload()">
+        Reload Page
+     </button>
+     <a class="goback" href="/intro.html">
+      <div class="container_blabla">Startpage</div>
+    </a>
+    </div>
     <script src="Physics/script.js"></script>
   </body>
 </html>
