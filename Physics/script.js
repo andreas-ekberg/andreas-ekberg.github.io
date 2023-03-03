@@ -124,9 +124,10 @@ class Ball {
 
     //this.vel = this.vel.add(this.acc.mult(0.15));
 
+    //console.log(this.angularVelocity);
+
     this.vel = this.angularVelocity.mult(this.r);
     this.angularVelocity = this.angularVelocity.mult(1 - friction);
-    //console.log(dt);
     this.pos = this.pos.add(this.vel.mult(dt));
 
     //this.pos.y = this.pos.y + this.angularVel * this.r * 0.015;
@@ -183,6 +184,7 @@ class Cue {
       //mainBall.vel.y = -V_initial_ball;
 
       mainBall.angularVelocity.y = -60;
+      console.log(mainBall.angularVelocity);
 
       hasBeenPressed = 0;
       cueDist = 0;
@@ -291,10 +293,10 @@ function pen_res_bw(b1, w1) {
 
 function coll_res_bw(b1, w1) {
   let normal = b1.pos.subtr(closestPointBW(b1, w1)).unit();
-  let sepVel = Vector.dot(b1.vel, normal);
+  let sepVel = Vector.dot(b1.angularVelocity, normal);
   let newSepVel = -sepVel * elasticity;
   let vesp_diff = sepVel - newSepVel;
-  b1.vel = b1.vel.add(normal.mult(-vesp_diff));
+  b1.angularVelocity = b1.angularVelocity.add(normal.mult(-vesp_diff));
 }
 
 //Animerar canvas varje frame
@@ -315,9 +317,17 @@ function mainLoop(currentTime) {
   cue.moveQue();
   ballList.forEach((b, index) => {
     b.drawBall();
-    if (Math.floor(b.angularVelocity.y) < 0) {
+
+    b.reposition(dt);
+    /*
+
+    if (
+      Math.floor(b.angularVelocity.y) < 0 ||
+      Math.floor(b.angularVelocity.x) < 0
+    ) {
+      console.log("bruh");
       b.reposition(dt);
-    }
+    }*/
 
     wallList.forEach((w) => {
       if (coll_det_bw(ballList[index], w)) {
@@ -375,12 +385,12 @@ let edge2 = new Wall(0, 0, 0, 480);
 let edge3 = new Wall(0, 480, 320, 480);
 let edge4 = new Wall(320, 0, 320, 480);
 
-/*let edgeBall1 = new Ball(0, 0, 12, 0, "black");
+let edgeBall1 = new Ball(0, 0, 12, 0, "black");
 let edgeBall2 = new Ball(0, 240, 12, 0, "black");
 let edgeBall3 = new Ball(0, 480, 12, 0, "black");
 let edgeBall4 = new Ball(320, 0, 12, 0, "black");
 let edgeBall5 = new Ball(320, 240, 12, 0, "black");
-let edgeBall6 = new Ball(320, 480, 12, 0, "black");*/
+let edgeBall6 = new Ball(320, 480, 12, 0, "black");
 
 let cue = new Cue(160, 400, 160, 440);
 
