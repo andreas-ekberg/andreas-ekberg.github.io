@@ -14,21 +14,18 @@ let UP;
 let LEFT;
 let RIGHT;
 
+//Konstanter som har används
 let friction = 0.03;
 let elasticity = 0.9;
-
 let radius = 12;
-
 let hasBeenPressed = 0;
-
 let cueDist = 0;
 
-//Array med alla bollar
+//Array med alla bollar och väggar
 const ballList = [];
-
 const wallList = [];
 
-//Vector klass för att kunna räkna ut vektor operationer.
+//Vektor klass för att kunna räkna ut vektor operationer.
 class Vector {
   constructor(x, y) {
     this.x = x;
@@ -76,6 +73,7 @@ class Vector {
   }
 }
 
+//Matris klass för att kunna skapa matriser och sen multiplicera med en vektor
 class Matrix {
   constructor(rows, cols) {
     this.rows = rows;
@@ -98,43 +96,36 @@ class Matrix {
   }
 }
 
+//Boll klass
 class Ball {
+  //Tar in x och y kordninater, radie, massa, färg, halvfylld eller helfylld, och vilken siffra bollen har
   constructor(x, y, r, m, color, type, number) {
-    //Posistion i x och y
     this.pos = new Vector(x, y);
-    //Radien
     this.r = r;
     this.color = color;
-
     this.m = m;
     this.type = type;
     this.number = number;
     if (this.m === 0) {
       this.inv_m = 0;
     } else this.inv_m = 1 / this.m;
-    //Horizontel och vertikal velocity
-    this.vel = new Vector(0, 0);
-    //acceleration vertikalt och horizontelt
-    this.acc = new Vector(0, 0);
-    this.acceleration = 1;
-    //Lägger in den i boll arrayen
-    this.angularVel = 0;
     this.angularVelocity = new Vector(0, 0);
+
+    //Lägg till bollen i listan med alla bollar
     ballList.push(this);
   }
 
-  //Funktion för att rita en boll som tar in 4 variabler
-  // x-kord, y-kord, radius, färg
+  //Funktion för att kunna rita ut en boll
   drawBall() {
-    //Ritar en cirkel
+    //Kollar vilken typ av boll det är
     if (this.type === "fill") {
+      //Ritar en cirkel
       ctx.beginPath();
       ctx.arc(this.pos.x, this.pos.y, this.r, 0, 2 * Math.PI);
 
       //Fyller den med färg
       ctx.fillStyle = this.color;
       ctx.fill();
-
       ctx.fillStyle = "white";
       ctx.fillText(this.number, this.pos.x, this.pos.y + 3);
       ctx.textAlign = "center";
@@ -143,29 +134,20 @@ class Ball {
 
     if (this.type === "half") {
       ctx.beginPath();
-
       ctx.arc(this.pos.x, this.pos.y, this.r, 0, 2 * Math.PI);
 
       //Fyller den med färg
       ctx.fillStyle = this.color;
       ctx.fill();
       ctx.stroke();
-
       ctx.beginPath();
       ctx.arc(this.pos.x, this.pos.y, this.r - 4, 0, 2 * Math.PI);
-      //ctx.strokeStyle = "white";
-
-      //Fyller den med färg
       ctx.fillStyle = "White";
       ctx.fill();
       ctx.fillStyle = "black";
       ctx.textAlign = "center";
       ctx.fillText(this.number, this.pos.x, this.pos.y + 3);
     }
-    //ctx.arc(this.pos.x, this.pos.y, this.r, Math.PI, 2 * Math.PI);
-
-    //Kanten på bollen
-    //fyller den
   }
 
   // för att rita ut linjer för acceleration och velocity
@@ -174,6 +156,7 @@ class Ball {
     this.acc.drawVec(this.x, this.y, 50, "red");
   }
 
+  //Euler approximation av bollens rullning där dt är tiden mellan frames
   reposition(dt) {
     this.vel = this.angularVelocity.mult(this.r);
     this.angularVelocity = this.angularVelocity.mult(1 - friction);
@@ -181,13 +164,17 @@ class Ball {
   }
 }
 
+//Vägg klassen
 class Wall {
+  //Tar in start x och y koordinater, och slut x och y koordninater
   constructor(x1, y1, x2, y2) {
     this.start = new Vector(x1, y1);
     this.end = new Vector(x2, y2);
+    //Lägger till i wall listan
     wallList.push(this);
   }
 
+  //Ritar ut väggen
   drawWall() {
     ctx.beginPath();
     ctx.moveTo(this.start.x, this.start.y);
@@ -196,35 +183,39 @@ class Wall {
     ctx.stroke();
   }
 
+  //Ger väggens unit vector
   wallUnit() {
     return this.end.subtr(this.start).unit();
   }
 }
 
+//Kö klassen
 class Cue {
+  //Tar in start x och y, slut x och y
   constructor(x1, y1, x2, y2) {
-    //Refrences
+    //Refrences till den vita bollens positioner
     this.ballRef = new Vector(mainBall.pos.x, mainBall.pos.y);
-    this.refStart = new Vector(x1, y1);
-    this.refEnd = new Vector(x2, y2);
 
     this.start = new Vector(x1, y1);
     this.end = new Vector(x2, y2);
+
+    //Längden från vita bollen till slutet av kön
     this.endLength = this.end.subtr(this.ballRef).mag();
+    //Längden från vita bollen till starten av kön
     this.startLength = this.start.subtr(this.ballRef).mag();
     this.angle = 0;
 
     this.refUnit = this.end.subtr(this.start).unit();
-
-    let spring_konst = 3;
   }
 
   drawCue() {
+    //Rotation av kön vektorn
     let rotMat = rotMx(this.angle);
     let newDir = rotMat.multiplyVector(this.refUnit);
     this.start = mainBall.pos.add(newDir.mult(this.startLength));
     this.end = mainBall.pos.add(newDir.mult(this.endLength));
 
+    //Ritar ut kön
     ctx.beginPath();
     ctx.moveTo(this.start.x, this.start.y);
     ctx.lineTo(this.end.x, this.end.y);
@@ -233,19 +224,13 @@ class Cue {
   }
 
   moveQue() {
-    let push = new Vector(0, 1);
-    if (UP && cueDist < 40) {
-      cueDist++;
-      this.start = this.start.add(push);
-      this.end = this.end.add(push);
-    } else if (!UP && hasBeenPressed > 0) {
+    if (!UP && hasBeenPressed > 0) {
+      //Riktningen av kön
       let pushVector = this.start.subtr(this.end).unit();
+      //Riktningen gånger kraften av slaget
       mainBall.angularVelocity = pushVector.mult(80);
 
-      //mainBall.angularVelocity.y = -60;
-
       hasBeenPressed = 0;
-      cueDist = 0;
     }
   }
 
@@ -266,9 +251,6 @@ class Cue {
 
 //Event handler för att lyssna på när man trycker ner en knapp
 canvas.addEventListener("keydown", function (e) {
-  //Lyssna och hitta vad key har för kod
-  //console.log(e);
-
   if (e.keyCode === 38) {
     UP = true;
   }
@@ -294,11 +276,13 @@ canvas.addEventListener("keyup", function (e) {
   }
 });
 
+//för att kunna avrunda tal
 function round(number, precision) {
   let factor = 10 ** precision;
   return Math.round(number * factor) / factor;
 }
 
+//Skapa en rotations matris
 function rotMx(angle) {
   let mx = new Matrix(2, 2);
   mx.data[0][0] = Math.cos(angle);
@@ -308,6 +292,7 @@ function rotMx(angle) {
   return mx;
 }
 
+//Räknar ut vart den närmaste punkten på en vägg är i förhållandet med en boll
 function closestPointBW(b1, w1) {
   let ballToWallStart = w1.start.subtr(b1.pos);
   if (Vector.dot(w1.wallUnit(), ballToWallStart) > 0) {
@@ -324,12 +309,14 @@ function closestPointBW(b1, w1) {
   return w1.start.subtr(closestVect);
 }
 
+//Kollar ifall två bollar ligger över varandra
 function coll_det_bb(b1, b2) {
   if (b1.r + b2.r >= b1.pos.subtr(b2.pos).mag()) {
     return true;
   } else return false;
 }
 
+//Puttar tillbaka två bollar ifall de ligger över varandra
 function pen_res_bb(b1, b2) {
   let dist = b1.pos.subtr(b2.pos);
   let pen_depth = b1.r + b2.r - dist.mag();
@@ -338,6 +325,7 @@ function pen_res_bb(b1, b2) {
   b2.pos = b2.pos.add(pen_res.mult(-1));
 }
 
+//Räknar ut nya riktningar för kollisionen samt hur snabbt de åker mellan två bollar
 function coll_ress_bb(b1, b2) {
   let normal = b1.pos.subtr(b2.pos).unit();
   let relVel = b1.angularVelocity.subtr(b2.angularVelocity);
@@ -352,6 +340,7 @@ function coll_ress_bb(b1, b2) {
   b2.angularVelocity = b2.angularVelocity.add(impulseVec.mult(-b2.inv_m));
 }
 
+//Kollar ifall en boll åker in i en vägg
 function coll_det_bw(b1, w1) {
   let ballToClosest = closestPointBW(b1, w1).subtr(b1.pos);
   if (ballToClosest.mag() <= b1.r) {
@@ -359,11 +348,13 @@ function coll_det_bw(b1, w1) {
   }
 }
 
+//Puttar tillbaka en boll från en vägg
 function pen_res_bw(b1, w1) {
   let penVect = b1.pos.subtr(closestPointBW(b1, w1));
   b1.pos = b1.pos.add(penVect.unit().mult(b1.r - penVect.mag()));
 }
 
+//Räknar ut den nya riktningen på bollen som kolliderar med en vägg
 function coll_res_bw(b1, w1) {
   let normal = b1.pos.subtr(closestPointBW(b1, w1)).unit();
   let sepVel = Vector.dot(b1.angularVelocity, normal);
@@ -386,40 +377,38 @@ function mainLoop(currentTime) {
   }
   dt = (currentTime - lastTime) / 1000;
   lastTime = currentTime;
-  //Move saker
+
   cue.moveQue();
+  //Ritar alla väggar
+  wallList.forEach((w) => {
+    w.drawWall();
+  });
+
+  //Går igenom varje boll
   ballList.forEach((b, index) => {
     b.drawBall();
-
     b.reposition(dt);
-    /*
 
-    if (
-      Math.floor(b.angularVelocity.y) < 0 ||
-      Math.floor(b.angularVelocity.x) < 0
-    ) {
-      console.log("bruh");
-      b.reposition(dt);
-    }*/
-
+    //Går igenom varje vägg och ser ifall en boll kolliderar med väggen
     wallList.forEach((w) => {
       if (coll_det_bw(ballList[index], w)) {
+        //Ifall kollision gör detta
         pen_res_bw(ballList[index], w);
         coll_res_bw(ballList[index], w);
       }
     });
 
+    //Kollar en boll coh går igenom alla andra bollar för att se ifall den kolliderar med någon annan boll
     for (let i = index + 1; i < ballList.length; i++) {
       if (coll_det_bb(ballList[index], ballList[i])) {
+        //Ifall de kolliderar gör detta
         pen_res_bb(ballList[index], ballList[i]);
         coll_ress_bb(ballList[index], ballList[i]);
       }
     }
   });
 
-  wallList.forEach((w) => {
-    w.drawWall();
-  });
+  //När kön ska vissas eller inte
   if (
     Math.round(mainBall.vel.y) === 0 &&
     !UP &&
@@ -465,13 +454,6 @@ let edge1 = new Wall(0, 0, 320, 0);
 let edge2 = new Wall(0, 0, 0, 480);
 let edge3 = new Wall(0, 480, 320, 480);
 let edge4 = new Wall(320, 0, 320, 480);
-
-/*let edgeBall1 = new Ball(0, 0, 12, 0, "black");
-let edgeBall2 = new Ball(0, 240, 12, 0, "black");
-let edgeBall3 = new Ball(0, 480, 12, 0, "black");
-let edgeBall4 = new Ball(320, 0, 12, 0, "black");
-let edgeBall5 = new Ball(320, 240, 12, 0, "black");
-let edgeBall6 = new Ball(320, 480, 12, 0, "black");*/
 
 let cue = new Cue(160, 400, 160, 480);
 
