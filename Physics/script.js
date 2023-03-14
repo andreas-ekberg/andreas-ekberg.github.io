@@ -109,6 +109,7 @@ class Ball {
     if (this.m === 0) {
       this.inv_m = 0;
     } else this.inv_m = 1 / this.m;
+    this.vel = new Vector(0, 0);
     this.angularVelocity = new Vector(0, 0);
 
     //Lägg till bollen i listan med alla bollar
@@ -224,14 +225,18 @@ class Cue {
   }
 
   moveQue() {
-    if (!UP && hasBeenPressed > 0) {
+    if (
+      UP &&
+      hasBeenPressed === 0 &&
+      Math.round(mainBall.angularVelocity.y) === 0 &&
+      Math.round(mainBall.angularVelocity.x) === 0
+    ) {
       //Riktningen av kön
       let pushVector = this.start.subtr(this.end).unit();
       //Riktningen gånger kraften av slaget
       mainBall.angularVelocity = pushVector.mult(80);
-
-      hasBeenPressed = 0;
     }
+    hasBeenPressed = 0;
   }
 
   rotateCue() {
@@ -410,16 +415,16 @@ function mainLoop(currentTime) {
 
   //När kön ska vissas eller inte
   if (
-    Math.round(mainBall.vel.y) === 0 &&
+    Math.round(mainBall.angularVelocity.x) === 0 &&
     !UP &&
-    Math.round(mainBall.vel.y) === 0
+    Math.round(mainBall.angularVelocity.y) === 0
   ) {
     cue.repositionCue();
     cue.rotateCue();
     cue.drawCue();
   } else if (
-    Math.round(mainBall.vel.y) === 0 &&
-    Math.round(mainBall.vel.y) === 0
+    Math.round(mainBall.angularVelocity.x) === 0 &&
+    Math.round(mainBall.angularVelocity.y) === 0
   ) {
     cue.drawCue();
   }
